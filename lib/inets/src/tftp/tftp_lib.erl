@@ -335,7 +335,9 @@ decode_msg(Bin) when is_binary(Bin) ->
             #tftp_msg_data{block_no = SeqNo, data = Data};
         <<?TFTP_OPCODE_ACK:16/integer, SeqNo:16/integer>> ->
             #tftp_msg_ack{block_no = SeqNo};
-        <<?TFTP_OPCODE_ERROR:16/integer, ErrorCode:16/integer, Tail/binary>> ->
+        <<?TFTP_OPCODE_ACK:16/integer, SeqNo:16/integer, _Rest/binary>> ->
+            #tftp_msg_ack{block_no = SeqNo};
+         <<?TFTP_OPCODE_ERROR:16/integer, ErrorCode:16/integer, Tail/binary>> ->
             case decode_strings(Tail, [keep_case]) of
                 [ErrorText] ->
                     ErrorCode2 = decode_error_code(ErrorCode),
