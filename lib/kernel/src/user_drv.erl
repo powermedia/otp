@@ -114,18 +114,19 @@ server1(Iport, Oport, Shell) ->
     User = start_user(),
     Gr1 = gr_add_cur(gr_new(), User, {}),
 
-    {Curr,Shell1} =
+    {Curr, Gr} =
 	case init:get_argument(remsh) of
-	    {ok,[[Node]]} ->
-		RShell = {list_to_atom(Node),shell,start,[]},
-		RGr = group:start(self(), RShell),
-		{RGr,RShell};
 	    E when E =:= error ; E =:= {ok,[[]]} ->
-		{group:start(self(), Shell),Shell}
-	end,
-
+                CurrP = group:start(self(), Shell),
+		{CurrP, gr_add_cur(Gr1, CurrP, Shell)};
+            {ok, Nodes} ->
+                lists:foldl(fun([Node], {_, GrP}) ->
+                                    RShell = {list_to_atom(Node),shell,start,[]},
+                                    RGr = group:start(self(), RShell),
+                                    {RGr, gr_add_cur(GrP, RGr, RShell)}
+                            end, {'-', Gr1}, Nodes)
+        end,
     put(current_group, Curr),
-    Gr = gr_add_cur(Gr1, Curr, Shell1),
     %% Print some information.
     io_request({put_chars, unicode,
 		flatten(io_lib:format("~s\n",
